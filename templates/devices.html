@@ -3,31 +3,36 @@
 {% block title %}Devices{% endblock %}
 
 {% block content %}
-<h2>Devices</h2>
+<h1>Devices</h1>
+<a href="{{ url_for('add_device') }}" class="btn btn-primary">Add Device</a>
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>Device Name</th>
-            <th>MAC Address</th>
-            <th>IP Address</th>
             {% if session['role'] == 'admin' %}
-            <th>Assigned User</th>
+            <th>User</th>
+            {% else %}
+            <th>ID</th>
             {% endif %}
+            <th>Name</th>
+            <th>IP Address</th>
+            <th>MAC Address</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         {% for device in devices %}
         <tr>
-            <td>{{ device[1] }}</td>
-            <td>{{ device[2] }}</td>
-            <td>{{ device[3] }}</td>
             {% if session['role'] == 'admin' %}
-            <td>{{ device[4] }}</td>
+            <td>{{ device.full_name }}</td>
+            {% else %}
+            <td>{{ device.id }}</td>
             {% endif %}
+            <td>{{ device.device_name }}</td>
+            <td>{{ device.ip_address }}</td>
+            <td>{{ device.mac_address }}</td>
             <td>
-                <a href="#" class="btn btn-warning btn-sm">Edit</a>
-                <a href="#" class="btn btn-danger btn-sm">Delete</a>
+                <a href="{{ url_for('edit_device', device_id=device.id) }}" class="btn btn-warning">Edit</a>
+                <a href="{{ url_for('delete_device', device_id=device.id) }}" class="btn btn-danger">Delete</a>
             </td>
         </tr>
         {% endfor %}

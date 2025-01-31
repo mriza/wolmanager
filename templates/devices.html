@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+
+{% block title %}Devices{% endblock %}
+
+{% block content %}
+<h2>Devices</h2>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Device Name</th>
+            <th>MAC Address</th>
+            <th>IP Address</th>
+            {% if session['role'] == 'admin' %}
+            <th>Assigned User</th>
+            {% endif %}
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for device in devices %}
+        <tr>
+            <td>{{ device[1] }}</td>
+            <td>{{ device[2] }}</td>
+            <td>{{ device[3] }}</td>
+            {% if session['role'] == 'admin' %}
+            <td>{{ device[4] }}</td>
+            {% endif %}
+            <td>
+                <a href="#" class="btn btn-warning btn-sm">Edit</a>
+                <a href="#" class="btn btn-danger btn-sm">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -5,13 +5,13 @@
 {% block content %}
 <h1>Add Device</h1>
 <form method="POST">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">  <!-- 🔹 Add CSRF token -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label for="name">Name:</label>
     <input type="text" id="name" name="name" class="form-control" required><br>
     <label for="ip_address">IP Address:</label>
-    <input type="text" id="ip_address" name="ip_address" class="form-control"><br>
+    <input type="text" id="ip_address" name="ip_address" class="form-control" oninput="formatIPAddress(this)" maxlength="15"><br>
     <label for="mac_address">MAC Address:</label>
-    <input type="text" id="mac_address" name="mac_address" class="form-control" required><br>
+    <input type="text" id="mac_address" name="mac_address" class="form-control" required maxlength="17"><br>
     {% if session['role'] == 'admin' %}
     <label for="user_id">User:</label>
     <select id="user_id" name="user_id" class="form-control">
@@ -20,6 +20,7 @@
         {% endfor %}
     </select><br>
     {% endif %}
-    <button type="submit" class="btn btn-success">Add Device</button>
+    <button type="submit" class="btn btn-success"><i class="bi bi-plus-circle"></i> Add Device</button>
 </form>
+
 {% endblock %}

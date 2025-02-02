@@ -6,98 +6,156 @@ import re
 import socket
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf.csrf import CSRFProtect
+import datetime
+from io import BytesIO
+import base64
+import json
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'fallback_secret_key')
 
-csrf = CSRFProtect(app)  # Enable CSRF protection
+csrf = CSRFProtect(app)
 
-# Database connection function
 def get_db_connection():
     conn = sqlite3.connect('database.db')
     conn.row_factory = sqlite3.Row
     return conn
 
-# Function to send Wake-on-LAN magic packet
 def send_wol(mac_address):
-    # Validate MAC address format
     if not re.match(r'^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$', mac_address):
         raise ValueError("Invalid MAC address format")
     mac_bytes = bytes.fromhex(mac_address.replace("-", "").replace(":", ""))
     magic_packet = b'\xff' * 6 + mac_bytes * 16
-
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        s.sendto(magic_packet, ('255.255.255.255', 9))  # Broadcast address
+        s.sendto(magic_packet, ('255.255.255.255', 9))
+
+def row_to_dict(row):
+    return dict(zip(row.keys(), row))  # Update the row_to_dict function
+
+def get_user_by_id(user_id):
+    with get_db_connection() as conn:
+        row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        return row_to_dict(row) if row else None
+
+def get_device_count(user_id=None):
+    with get_db_connection() as conn:
+        if user_id:
+            return conn.execute("SELECT COUNT(*) FROM devices WHERE user_id = ?", (user_id,)).fetchone()[0]
+        return conn.execute("SELECT COUNT(*) FROM devices").fetchone()[0]
+
+def get_users_count():
+    with get_db_connection() as conn:
+        return conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+
+def is_user_logged_in():
+    return 'user' in session
+
+def is_user_admin():
+    return session.get('role') == 'admin'
+
+def get_event_history(user_id=None):
+    with get_db_connection() as conn:
+        if user_id:
+            return conn.execute("""
+                SELECT e.event_time, e.status, d.device_name, u.username
+                FROM events e
+                JOIN devices d ON e.device_id = d.id
+                JOIN users u ON e.user_id = u.id
+                WHERE e.user_id = ?
+            """, (user_id,)).fetchall()
+        return conn.execute("""
+            SELECT e.event_time, e.status, d.device_name, u.username
+            FROM events e
+            JOIN devices d ON e.device_id = d.id
+            JOIN users u ON e.user_id = u.id
+        """).fetchall()
 
 @app.route('/')
 def index():
-    if 'user' not in session:
+    if not is_user_logged_in():
         return redirect(url_for('login'))
     return redirect(url_for('dashboard'))
 
-# Login route
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-
         with get_db_connection() as conn:
             user = conn.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
-
             if user and check_password_hash(user['password'], password):
                 session['user'] = user['username']
-                session['user_id'] = user['id']  # Store user_id in session
+                session['user_full_name'] = user['full_name']
+                session['user_id'] = user['id']
                 session['role'] = user['role']
                 flash('Login successful!', 'success')
                 return redirect(url_for('dashboard'))
             else:
                 flash('Invalid username or password', 'danger')
-
     return render_template('login.html')
 
-# Dashboard route
 @app.route('/dashboard')
 def dashboard():
-    if 'user' not in session:
+    if not is_user_logged_in():
         return redirect(url_for('login'))
 
-    with get_db_connection() as conn:
-        users_count = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
-        devices_count = conn.execute("SELECT COUNT(*) FROM devices").fetchone()[0]
+    page = request.args.get('page', 1, type=int)
+    per_page = 15
+    offset = (page - 1) * per_page
 
-    return render_template('dashboard.html', users=users_count, devices=devices_count)
+    if is_user_admin():
+        users_count = get_users_count()
+        devices_count = get_device_count()
+        events = get_event_history()
+    else:
+        users_count = None
+        devices_count = get_device_count(session['user_id'])
+        events = get_event_history(session['user_id'])
 
-# -------------------------
-# User Management (Admin Only)
-# -------------------------
+    # Convert SQLite Row objects to dictionaries
+    events_list = []
+    for event in events:
+        event_dict = {}
+        for key in event.keys():
+            event_dict[key] = str(event[key])  # Convert all values to strings
+        events_list.append(event_dict)
 
-# List users (Admin only)
+    success_count = sum(1 for event in events_list if 'Success' in event['status'])
+    failed_count = len(events_list) - success_count
+
+    paginated_events = events_list[offset:offset + per_page]
+
+    return render_template('dashboard.html', 
+                         users_count=users_count or 0, 
+                         devices_count=devices_count, 
+                         success_count=success_count, 
+                         failed_count=failed_count, 
+                         events=json.dumps(paginated_events))  # Pre-serialize the events data
+
 @app.route('/users')
 def users():
-    if 'user' not in session or session.get('role') != 'admin':
+    if not is_user_logged_in():
+        return redirect(url_for('login'))
+    if not is_user_admin():
         return redirect(url_for('dashboard'))
-
     with get_db_connection() as conn:
         users = conn.execute("SELECT * FROM users").fetchall()
-
     return render_template('users.html', users=users)
 
-# Add user (Admin only)
 @app.route('/users/add', methods=['GET', 'POST'])
 def add_user():
-    if 'user' not in session or session.get('role') != 'admin':
+    if not is_user_logged_in():
+        return redirect(url_for('login'))
+    if not is_user_admin():
         return redirect(url_for('dashboard'))
-
     if request.method == 'POST':
         full_name = request.form['full_name']
         email = request.form['email']
         phone = request.form['phone']
         username = request.form['username']
-        password = generate_password_hash(request.form['password'])  # Hash password
+        password = generate_password_hash(request.form['password'])
         role = request.form['role']
-
         with get_db_connection() as conn:
             try:
                 conn.execute(
@@ -106,41 +164,35 @@ def add_user():
                 )
                 conn.commit()
                 flash('User added successfully!', 'success')
-                return redirect(url_for('users'))  # Redirect to users page
+                return redirect(url_for('users'))
             except sqlite3.IntegrityError:
                 flash('Username already exists!', 'danger')
             except sqlite3.OperationalError as e:
                 flash(f'An error occurred while adding the user: {str(e)}', 'danger')
                 conn.rollback()
-
     return render_template('add_user.html')
 
-# Edit user (Admin only)
 @app.route('/users/edit/<int:user_id>', methods=['GET', 'POST'])
 def edit_user(user_id):
-    if 'user' not in session or session.get('role') != 'admin':
+    if not is_user_logged_in():
+        return redirect(url_for('login'))
+    if not is_user_admin():
         return redirect(url_for('dashboard'))
-
     with get_db_connection() as conn:
         user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
-
         if not user:
             flash('User not found!', 'danger')
             return redirect(url_for('users'))
-
         if request.method == 'POST':
             full_name = request.form['full_name']
             email = request.form['email']
             phone = request.form['phone']
             role = request.form['role']
-
-            # Only update password if a new one is provided, else keep current password.
             new_password = request.form.get('password', '')
             if new_password.strip():
                 password = generate_password_hash(new_password)
             else:
                 password = user['password']
-
             try:
                 conn.execute(
                     "UPDATE users SET full_name = ?, email = ?, phone = ?, password = ?, role = ? WHERE id = ?",
@@ -152,64 +204,47 @@ def edit_user(user_id):
             except sqlite3.OperationalError as e:
                 flash(f'An error occurred while updating the user: {str(e)}', 'danger')
                 conn.rollback()
-
     return render_template('edit_user.html', user=user)
 
-# Delete user (Admin only)
 @app.route('/users/delete/<int:user_id>', methods=['POST'])
 def delete_user(user_id):
-    if 'user' not in session or session.get('role') != 'admin':
+    if not is_user_logged_in():
+        return redirect(url_for('login'))
+    if not is_user_admin():
         return redirect(url_for('dashboard'))
-
     with get_db_connection() as conn:
         conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
         conn.commit()
-
     flash('User deleted successfully!', 'success')
     return redirect(url_for('users'))
 
-# -------------------------
-# Device Management
-# -------------------------
-
 @app.route('/devices')
 def devices():
-    if 'user' not in session:
-        return redirect(url_for('dashboard'))
-
+    if not is_user_logged_in():
+        return redirect(url_for('login'))
     with get_db_connection() as conn:
-        if session.get('role') == 'admin':
-            # Use aliases to distinguish columns from devices and users tables
-            devices = conn.execute(
-                """
+        if is_user_admin():
+            devices = conn.execute("""
                 SELECT d.id AS id, d.device_name, d.ip_address, d.mac_address, u.username AS owner_username
                 FROM devices d
                 JOIN users u ON d.user_id = u.id
-                """
-            ).fetchall()
+            """).fetchall()
         else:
             devices = conn.execute("SELECT * FROM devices WHERE user_id = ?", (session['user_id'],)).fetchall()
-
     return render_template('devices.html', devices=devices)
 
 @app.route('/devices/add', methods=['GET', 'POST'])
 def add_device():
-    if 'user' not in session:
-        return redirect(url_for('dashboard'))
-
+    if not is_user_logged_in():
+        return redirect(url_for('login'))
     if request.method == 'POST':
         device_name = request.form['name']
         ip_address = request.form['ip_address']
         mac_address = request.form['mac_address']
-
-        # For non-admin users, always assign the device to themselves.
-        # Admins can optionally select a different user for the device.
-        if session.get('role') == 'admin':
-            # Expecting a field named "user_id" from the form; default to admin's user_id if not provided.
+        if is_user_admin():
             user_id = request.form.get('user_id', session['user_id'])
         else:
             user_id = session['user_id']
-
         with get_db_connection() as conn:
             try:
                 conn.execute(
@@ -224,35 +259,28 @@ def add_device():
             except sqlite3.OperationalError as e:
                 flash(f'Database error! Details: {str(e)}', 'danger')
                 conn.rollback()
-
     users = []
-    if session.get('role') == 'admin':
+    if is_user_admin():
         with get_db_connection() as conn:
             users = conn.execute("SELECT id, username FROM users").fetchall()
-
     return render_template('add_device.html', users=users)
 
 @app.route('/devices/edit/<int:device_id>', methods=['GET', 'POST'])
 def edit_device(device_id):
-    if 'user' not in session:
-        return redirect(url_for('dashboard'))
-
+    if not is_user_logged_in():
+        return redirect(url_for('login'))
     with get_db_connection() as conn:
-        # Admins can edit any device; non-admins can only edit their own devices.
-        if session.get('role') == 'admin':
+        if is_user_admin():
             device = conn.execute("SELECT * FROM devices WHERE id = ?", (device_id,)).fetchone()
         else:
             device = conn.execute("SELECT * FROM devices WHERE id = ? AND user_id = ?", (device_id, session['user_id'])).fetchone()
-
         if not device:
             flash('Device not found or you do not have permission to edit this device.', 'danger')
             return redirect(url_for('devices'))
-
         if request.method == 'POST':
             device_name = request.form['name']
             ip_address = request.form['ip_address']
             mac_address = request.form['mac_address']
-
             try:
                 conn.execute(
                     "UPDATE devices SET device_name = ?, ip_address = ?, mac_address = ? WHERE id = ?",
@@ -263,67 +291,69 @@ def edit_device(device_id):
                 return redirect(url_for('devices'))
             except sqlite3.OperationalError as e:
                 flash(f'Database error! Details: {str(e)}', 'danger')
-
     return render_template('edit_device.html', device=device)
 
 @app.route('/devices/delete/<int:device_id>', methods=['POST'])
 def delete_device(device_id):
-    if 'user' not in session:
-        return redirect(url_for('dashboard'))
-
+    if not is_user_logged_in():
+        return redirect(url_for('login'))
     with get_db_connection() as conn:
-        # Admins can delete any device; non-admins can only delete their own devices.
-        if session.get('role') == 'admin':
+        if is_user_admin():
             conn.execute("DELETE FROM devices WHERE id = ?", (device_id,))
         else:
             conn.execute("DELETE FROM devices WHERE id = ? AND user_id = ?", (device_id, session['user_id']))
         conn.commit()
-
     flash('Device deleted successfully!', 'success')
     return redirect(url_for('devices'))
 
-@app.route('/start_device/<mac_address>')
-def start_device(mac_address):
-    if 'user' not in session:
-        return redirect(url_for('dashboard'))
-
+@app.route('/start_device/<int:device_id>', methods=['POST'])
+def start_device(device_id):
+    if not is_user_logged_in():
+        return redirect(url_for('login'))
+    with get_db_connection() as conn:
+        device = conn.execute("SELECT mac_address FROM devices WHERE id = ?", (device_id,)).fetchone()
+        if not device:
+            flash('Device not found.', 'danger')
+            conn.execute(
+                "INSERT INTO events (user_id, device_id, event_time, status) VALUES (?, ?, ?, ?)",
+                (session['user_id'], device_id, datetime.datetime.now(), 'Failed: Device not found')
+            )
+            conn.commit()
+            return redirect(url_for('devices'))
+        mac_address = device['mac_address']
     try:
         send_wol(mac_address)
         flash('Magic packet sent successfully!', 'success')
+        status = 'Success'
     except Exception as e:
         flash(f'Failed to send magic packet: {str(e)}', 'danger')
+        status = f'Failed: {str(e)}'
+    with get_db_connection() as conn:
+        conn.execute(
+            "INSERT INTO events (user_id, device_id, event_time, status) VALUES (?, ?, ?, ?)",
+            (session['user_id'], device_id, datetime.datetime.now(), status)
+        )
+        conn.commit()
     return redirect(url_for('devices'))
-
-# -------------------------
-# Profile Management
-# -------------------------
 
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
-    if 'user' not in session:
+    if not is_user_logged_in():
         return redirect(url_for('login'))
-
     with get_db_connection() as conn:
         user = conn.execute("SELECT * FROM users WHERE username = ?", (session['user'],)).fetchone()
-
         if request.method == 'POST':
             full_name = request.form['full_name']
             email = request.form['email']
             phone = request.form['phone']
             password = request.form['password']
             password_confirm = request.form['password_confirm']
-
-            # Validate required fields
             if not full_name or not email or not phone:
                 flash('Full Name, Email, and Phone are required fields.', 'danger')
                 return redirect(url_for('profile'))
-
-            # Validate email format
             if not re.match(r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$', email):
                 flash('Invalid email format.', 'danger')
                 return redirect(url_for('profile'))
-
-            # Validate password confirmation if provided
             if password or password_confirm:
                 if password != password_confirm:
                     flash('Passwords do not match.', 'danger')
@@ -331,7 +361,6 @@ def profile():
                 password_hash = generate_password_hash(password)
             else:
                 password_hash = user['password']
-
             try:
                 conn.execute(
                     "UPDATE users SET full_name = ?, email = ?, phone = ?, password = ? WHERE username = ?",
@@ -342,30 +371,18 @@ def profile():
             except sqlite3.OperationalError as e:
                 flash(f'An error occurred while updating the profile: {str(e)}', 'danger')
                 conn.rollback()
-
     return render_template('profile.html', user=user)
-
-# -------------------------
-# Wake-on-LAN
-# -------------------------
 
 @app.route('/wol', methods=['POST'])
 def wol():
-    if 'user' not in session:
+    if not is_user_logged_in():
         return redirect(url_for('login'))
-
-    mac_address = request.form['mac_address']
+    device_id = request.form['device_id']
     try:
-        send_wol(mac_address)
-        flash(f'Magic packet sent to {mac_address}', 'success')
+        return redirect(url_for('start_device', device_id=device_id))
     except ValueError as e:
         flash(str(e), 'danger')
-
     return redirect(url_for('dashboard'))
-
-# -------------------------
-# Logout
-# -------------------------
 
 @app.route('/logout')
 def logout():
@@ -373,6 +390,5 @@ def logout():
     session.pop('role', None)
     return redirect(url_for('login'))
 
-# Run the app
 if __name__ == '__main__':
     app.run(debug=True)

@@ -3,23 +3,17 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<h2>Dashboard</h2>
-<div class="row">
-    <div class="col-md-4">
-        <div class="card text-white bg-primary mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Users</h5>
-                <p class="card-text">{{ users }}</p>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card text-white bg-success mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Devices</h5>
-                <p class="card-text">{{ devices }}</p>
-            </div>
-        </div>
-    </div>
+<div id="dashboard-container" 
+     data-users="{{ users_count }}" 
+     data-devices="{{ devices_count }}"
+     data-success="{{ success_count }}"
+     data-failed="{{ failed_count }}"
+     data-events="{{ events|tojson|safe }}">
+    <div id="kpi-users" class="dashboard-cell"></div>
+    <div id="kpi-devices" class="dashboard-cell"></div>
+    <div id="success-chart" class="dashboard-cell"></div>
+    <div id="failed-chart" class="dashboard-cell"></div>
+    <div id="events-grid"></div>
+    <div id="events-table" class="dashboard-cell"></div>
 </div>
 {% endblock %}

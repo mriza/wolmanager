@@ -5,7 +5,6 @@
 {% block content %}
 <h1>Edit Device</h1>
 
-<!-- Flash messages section -->
 {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
         <div class="flash-messages">
@@ -17,13 +16,14 @@
 {% endwith %}
 
 <form method="POST">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">  <!-- 🔹 Add CSRF token -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label for="name">Name:</label>
     <input type="text" id="name" name="name" value="{{ device.device_name }}" class="form-control" required><br>
     <label for="ip_address">IP Address:</label>
-    <input type="text" id="ip_address" name="ip_address" value="{{ device.ip_address }}" class="form-control"><br>
+    <input type="text" id="ip_address" name="ip_address" value="{{ device.ip_address }}" class="form-control" oninput="formatIPAddress(this)" maxlength="15"><br>
     <label for="mac_address">MAC Address:</label>
-    <input type="text" id="mac_address" name="mac_address" value="{{ device.mac_address }}" class="form-control" required><br>
-    <button type="submit" class="btn btn-primary">Update Device</button>
+    <input type="text" id="mac_address" name="mac_address" value="{{ device.mac_address }}" class="form-control" required maxlength="17"><br>
+    <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Update Device</button>
 </form>
+
 {% endblock %}

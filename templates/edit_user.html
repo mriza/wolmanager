@@ -6,7 +6,7 @@
 <h2>Edit User</h2>
 
 <form action="{{ url_for('edit_user', user_id=user['id']) }}" method="POST">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">  <!-- 🔹 Add CSRF token -->
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="mb-3">
         <label>Full Name</label>
         <input type="text" name="full_name" class="form-control" value="{{ user['full_name'] }}" required>
@@ -20,8 +20,8 @@
         <input type="text" name="phone" class="form-control" value="{{ user['phone'] }}" required>
     </div>
     <div class="mb-3">
-        <label>Password</label>
-        <input type="password" name="password" class="form-control" required>
+        <label>New Password (leave blank to keep current password)</label>
+        <input type="password" name="password" class="form-control" placeholder="Leave blank to keep current password">
     </div>
     <div class="mb-3">
         <label>Role</label>
@@ -30,6 +30,6 @@
             <option value="user" {% if user['role'] == 'user' %}selected{% endif %}>User</option>
         </select>
     </div>
-    <button type="submit" class="btn btn-primary">Update User</button>
+    <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Update User</button>
 </form>
 {% endblock %}

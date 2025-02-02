@@ -101,3 +101,5 @@ WOLManager is a web-based application that sends magic packets to PCs on your LA
    ```sh
    sudo supervisorctl start wolmanager
    ```
+
+(screenshots/devices.png)

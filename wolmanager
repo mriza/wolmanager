@@ -3,7 +3,6 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import sqlite3
 import os
 import re
-import struct
 import socket
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf.csrf import CSRFProtect
@@ -24,13 +23,18 @@ def send_wol(mac_address):
     # Validate MAC address format
     if not re.match(r'^([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})$', mac_address):
         raise ValueError("Invalid MAC address format")
-
     mac_bytes = bytes.fromhex(mac_address.replace("-", "").replace(":", ""))
     magic_packet = b'\xff' * 6 + mac_bytes * 16
 
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
         s.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         s.sendto(magic_packet, ('255.255.255.255', 9))  # Broadcast address
+
+@app.route('/')
+def index():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    return redirect(url_for('dashboard'))
 
 # Login route
 @app.route('/login', methods=['GET', 'POST'])
@@ -64,6 +68,10 @@ def dashboard():
         devices_count = conn.execute("SELECT COUNT(*) FROM devices").fetchone()[0]
 
     return render_template('dashboard.html', users=users_count, devices=devices_count)
+
+# -------------------------
+# User Management (Admin Only)
+# -------------------------
 
 # List users (Admin only)
 @app.route('/users')
@@ -101,12 +109,11 @@ def add_user():
                 return redirect(url_for('users'))  # Redirect to users page
             except sqlite3.IntegrityError:
                 flash('Username already exists!', 'danger')
-            except sqlite3.OperationalError:
-                flash('An error occurred while adding the user.', 'danger')
+            except sqlite3.OperationalError as e:
+                flash(f'An error occurred while adding the user: {str(e)}', 'danger')
                 conn.rollback()
 
     return render_template('add_user.html')
-
 
 # Edit user (Admin only)
 @app.route('/users/edit/<int:user_id>', methods=['GET', 'POST'])
@@ -125,8 +132,14 @@ def edit_user(user_id):
             full_name = request.form['full_name']
             email = request.form['email']
             phone = request.form['phone']
-            password = generate_password_hash(request.form['password'])  # Hash password
             role = request.form['role']
+
+            # Only update password if a new one is provided, else keep current password.
+            new_password = request.form.get('password', '')
+            if new_password.strip():
+                password = generate_password_hash(new_password)
+            else:
+                password = user['password']
 
             try:
                 conn.execute(
@@ -135,9 +148,9 @@ def edit_user(user_id):
                 )
                 conn.commit()
                 flash('User updated successfully!', 'success')
-                return redirect(url_for('users'))  # Redirect to users page
-            except sqlite3.OperationalError:
-                flash('An error occurred while updating the user.', 'danger')
+                return redirect(url_for('users'))
+            except sqlite3.OperationalError as e:
+                flash(f'An error occurred while updating the user: {str(e)}', 'danger')
                 conn.rollback()
 
     return render_template('edit_user.html', user=user)
@@ -155,7 +168,10 @@ def delete_user(user_id):
     flash('User deleted successfully!', 'success')
     return redirect(url_for('users'))
 
-# Device management
+# -------------------------
+# Device Management
+# -------------------------
+
 @app.route('/devices')
 def devices():
     if 'user' not in session:
@@ -163,7 +179,14 @@ def devices():
 
     with get_db_connection() as conn:
         if session.get('role') == 'admin':
-            devices = conn.execute("SELECT devices.*, users.* FROM devices JOIN users ON devices.user_id = users.id").fetchall()
+            # Use aliases to distinguish columns from devices and users tables
+            devices = conn.execute(
+                """
+                SELECT d.id AS id, d.device_name, d.ip_address, d.mac_address, u.username AS owner_username
+                FROM devices d
+                JOIN users u ON d.user_id = u.id
+                """
+            ).fetchall()
         else:
             devices = conn.execute("SELECT * FROM devices WHERE user_id = ?", (session['user_id'],)).fetchall()
 
@@ -171,17 +194,21 @@ def devices():
 
 @app.route('/devices/add', methods=['GET', 'POST'])
 def add_device():
-    if 'user' not in session or session.get('role') != 'admin':
+    if 'user' not in session:
         return redirect(url_for('dashboard'))
-
-    with get_db_connection() as conn:
-        users = conn.execute("SELECT * FROM users").fetchall()
 
     if request.method == 'POST':
         device_name = request.form['name']
         ip_address = request.form['ip_address']
         mac_address = request.form['mac_address']
-        user_id = request.form['user_id']  # Get the user_id from the form
+
+        # For non-admin users, always assign the device to themselves.
+        # Admins can optionally select a different user for the device.
+        if session.get('role') == 'admin':
+            # Expecting a field named "user_id" from the form; default to admin's user_id if not provided.
+            user_id = request.form.get('user_id', session['user_id'])
+        else:
+            user_id = session['user_id']
 
         with get_db_connection() as conn:
             try:
@@ -191,28 +218,41 @@ def add_device():
                 )
                 conn.commit()
                 flash('Device added successfully!', 'success')
-                return redirect(url_for('devices'))  # Redirect to devices page
-            except sqlite3.IntegrityError:
-                flash('Device already exists!', 'danger')
-            except sqlite3.OperationalError:
-                flash('Database error!', 'danger')
+                return redirect(url_for('devices'))
+            except sqlite3.IntegrityError as e:
+                flash(f'Device already exists! Details: {str(e)}', 'danger')
+            except sqlite3.OperationalError as e:
+                flash(f'Database error! Details: {str(e)}', 'danger')
+                conn.rollback()
+
+    users = []
+    if session.get('role') == 'admin':
+        with get_db_connection() as conn:
+            users = conn.execute("SELECT id, username FROM users").fetchall()
 
     return render_template('add_device.html', users=users)
 
 @app.route('/devices/edit/<int:device_id>', methods=['GET', 'POST'])
 def edit_device(device_id):
-    if 'user' not in session or session.get('role') != 'admin':
+    if 'user' not in session:
         return redirect(url_for('dashboard'))
 
     with get_db_connection() as conn:
-        device = conn.execute("SELECT * FROM devices WHERE id = ?", (device_id,)).fetchone()
+        # Admins can edit any device; non-admins can only edit their own devices.
+        if session.get('role') == 'admin':
+            device = conn.execute("SELECT * FROM devices WHERE id = ?", (device_id,)).fetchone()
+        else:
+            device = conn.execute("SELECT * FROM devices WHERE id = ? AND user_id = ?", (device_id, session['user_id'])).fetchone()
 
-    if request.method == 'POST':
-        device_name = request.form['name']
-        ip_address = request.form['ip_address']
-        mac_address = request.form['mac_address']
+        if not device:
+            flash('Device not found or you do not have permission to edit this device.', 'danger')
+            return redirect(url_for('devices'))
 
-        with get_db_connection() as conn:
+        if request.method == 'POST':
+            device_name = request.form['name']
+            ip_address = request.form['ip_address']
+            mac_address = request.form['mac_address']
+
             try:
                 conn.execute(
                     "UPDATE devices SET device_name = ?, ip_address = ?, mac_address = ? WHERE id = ?",
@@ -220,29 +260,44 @@ def edit_device(device_id):
                 )
                 conn.commit()
                 flash('Device updated successfully!', 'success')
-                return redirect(url_for('devices'))  # Redirect to devices page
-            except sqlite3.OperationalError:
-                flash('Database error!', 'danger')
+                return redirect(url_for('devices'))
+            except sqlite3.OperationalError as e:
+                flash(f'Database error! Details: {str(e)}', 'danger')
 
     return render_template('edit_device.html', device=device)
 
-@app.route('/devices/delete/<int:device_id>')
+@app.route('/devices/delete/<int:device_id>', methods=['POST'])
 def delete_device(device_id):
-    if 'user' not in session or session.get('role') != 'admin':
+    if 'user' not in session:
         return redirect(url_for('dashboard'))
 
     with get_db_connection() as conn:
-        try:
+        # Admins can delete any device; non-admins can only delete their own devices.
+        if session.get('role') == 'admin':
             conn.execute("DELETE FROM devices WHERE id = ?", (device_id,))
-            conn.commit()
-            flash('Device deleted successfully!', 'success')
-            return redirect(url_for('devices'))  # Redirect to devices page
-        except sqlite3.OperationalError:
-            flash('Database error!', 'danger')
+        else:
+            conn.execute("DELETE FROM devices WHERE id = ? AND user_id = ?", (device_id, session['user_id']))
+        conn.commit()
 
+    flash('Device deleted successfully!', 'success')
     return redirect(url_for('devices'))
 
-# Profile management
+@app.route('/start_device/<mac_address>')
+def start_device(mac_address):
+    if 'user' not in session:
+        return redirect(url_for('dashboard'))
+
+    try:
+        send_wol(mac_address)
+        flash('Magic packet sent successfully!', 'success')
+    except Exception as e:
+        flash(f'Failed to send magic packet: {str(e)}', 'danger')
+    return redirect(url_for('devices'))
+
+# -------------------------
+# Profile Management
+# -------------------------
+
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
     if 'user' not in session:
@@ -268,16 +323,13 @@ def profile():
                 flash('Invalid email format.', 'danger')
                 return redirect(url_for('profile'))
 
-            # Validate password confirmation
+            # Validate password confirmation if provided
             if password or password_confirm:
                 if password != password_confirm:
                     flash('Passwords do not match.', 'danger')
                     return redirect(url_for('profile'))
-
-                # Hash the new password
                 password_hash = generate_password_hash(password)
             else:
-                # Keep the current password if no new password is provided
                 password_hash = user['password']
 
             try:
@@ -287,13 +339,16 @@ def profile():
                 )
                 conn.commit()
                 flash('Profile updated successfully', 'success')
-            except sqlite3.OperationalError:
-                flash('An error occurred while updating the profile.', 'danger')
+            except sqlite3.OperationalError as e:
+                flash(f'An error occurred while updating the profile: {str(e)}', 'danger')
                 conn.rollback()
 
     return render_template('profile.html', user=user)
 
+# -------------------------
 # Wake-on-LAN
+# -------------------------
+
 @app.route('/wol', methods=['POST'])
 def wol():
     if 'user' not in session:
@@ -308,7 +363,10 @@ def wol():
 
     return redirect(url_for('dashboard'))
 
+# -------------------------
 # Logout
+# -------------------------
+
 @app.route('/logout')
 def logout():
     session.pop('user', None)

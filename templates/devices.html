@@ -4,7 +4,7 @@
 
 {% block content %}
 <h1>Devices</h1>
-<a href="{{ url_for('add_device') }}" class="btn btn-primary">Add Device</a>
+<a href="{{ url_for('add_device') }}" class="btn btn-primary">&#x2795; Add Device</a>
 <table class="table table-striped">
     <thead>
         <tr>
@@ -23,7 +23,7 @@
         {% for device in devices %}
         <tr>
             {% if session['role'] == 'admin' %}
-            <td>{{ device.full_name }}</td>
+            <td>{{ device.owner_username }}</td>
             {% else %}
             <td>{{ device.id }}</td>
             {% endif %}
@@ -31,8 +31,12 @@
             <td>{{ device.ip_address }}</td>
             <td>{{ device.mac_address }}</td>
             <td>
-                <a href="{{ url_for('edit_device', device_id=device.id) }}" class="btn btn-warning">Edit</a>
-                <a href="{{ url_for('delete_device', device_id=device.id) }}" class="btn btn-danger">Delete</a>
+                <a href="{{ url_for('start_device', mac_address=device.mac_address) }}" class="btn btn-success">&#x25B6; Start</a>
+                <a href="{{ url_for('edit_device', device_id=device.id) }}" class="btn btn-warning">&#x270E; Edit</a>
+                <form action="{{ url_for('delete_device', device_id=device.id) }}" method="POST" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">&#x1F5D1; Delete</button>
+                </form>
             </td>
         </tr>
         {% endfor %}

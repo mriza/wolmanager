@@ -1,4 +1,4 @@
-![Wake On LAN manager](screenshots/devices.png)
+![Wake On LAN manager](screenshoots/devices.png)
 
 # Web based Wake On LAN manager
 

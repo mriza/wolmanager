@@ -71,6 +71,24 @@ def get_event_history(user_id=None):
             JOIN users u ON e.user_id = u.id
         """).fetchall()
 
+def get_wol_event_count(period):
+    query = """
+        SELECT COUNT(*) FROM events
+        WHERE status LIKE 'Success%' AND event_time >= ?
+    """
+    now = datetime.datetime.now()
+    if period == 'today':
+        start_time = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    elif period == 'month':
+        start_time = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    elif period == 'year':
+        start_time = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
+    else:
+        raise ValueError("Invalid period specified")
+
+    with get_db_connection() as conn:
+        return conn.execute(query, (start_time,)).fetchone()[0]
+
 @app.route('/')
 def index():
     if not is_user_logged_in():
@@ -100,38 +118,20 @@ def dashboard():
     if not is_user_logged_in():
         return redirect(url_for('login'))
 
-    page = request.args.get('page', 1, type=int)
-    per_page = 15
-    offset = (page - 1) * per_page
-
     if is_user_admin():
-        users_count = get_users_count()
-        devices_count = get_device_count()
-        events = get_event_history()
+        num_users = get_users_count()
+        num_devices = get_device_count()
     else:
-        users_count = None
-        devices_count = get_device_count(session['user_id'])
-        events = get_event_history(session['user_id'])
+        num_users = None
+        num_devices = get_device_count(session['user_id'])
 
-    # Convert SQLite Row objects to dictionaries
-    events_list = []
-    for event in events:
-        event_dict = {}
-        for key in event.keys():
-            event_dict[key] = str(event[key])  # Convert all values to strings
-        events_list.append(event_dict)
+    wol_events_today = get_wol_event_count('today')
+    wol_events_month = get_wol_event_count('month')
+    wol_events_year = get_wol_event_count('year')
 
-    success_count = sum(1 for event in events_list if 'Success' in event['status'])
-    failed_count = len(events_list) - success_count
-
-    paginated_events = events_list[offset:offset + per_page]
-
-    return render_template('dashboard.html', 
-                         users_count=users_count or 0, 
-                         devices_count=devices_count, 
-                         success_count=success_count, 
-                         failed_count=failed_count, 
-                         events=json.dumps(paginated_events))  # Pre-serialize the events data
+    return render_template('dashboard.html', num_users=num_users, num_devices=num_devices,
+                           wol_events_today=wol_events_today, wol_events_month=wol_events_month,
+                           wol_events_year=wol_events_year)
 
 @app.route('/users')
 def users():

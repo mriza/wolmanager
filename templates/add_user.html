@@ -3,37 +3,60 @@
 {% block title %}Add User{% endblock %}
 
 {% block content %}
-<h2>Add User</h2>
+<div class="daisyui theme-acid">
+    <h1 class="text-2xl font-bold mb-4">Add User</h1>
 
-<form action="{{ url_for('add_user') }}" method="POST">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <div class="mb-3">
-        <label>Full Name</label>
-        <input type="text" name="full_name" class="form-control" required>
-    </div>
-    <div class="mb-3">
-        <label>Email</label>
-        <input type="email" name="email" class="form-control" required>
-    </div>
-    <div class="mb-3">
-        <label>Phone</label>
-        <input type="text" name="phone" class="form-control" required>
-    </div>
-    <div class="mb-3">
-        <label>Username</label>
-        <input type="text" name="username" class="form-control" required>
-    </div>
-    <div class="mb-3">
-        <label>Password</label>
-        <input type="password" name="password" class="form-control" required>
-    </div>
-    <div class="mb-3">
-        <label>Role</label>
-        <select name="role" class="form-control">
-            <option value="admin">Admin</option>
-            <option value="user">User</option>
-        </select>
-    </div>
-    <button type="submit" class="btn btn-success"><i class="bi bi-person-plus"></i> Add User</button>
-</form>
+    <form action="{{ url_for('add_user') }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="mb-4">
+            <label class="input input-bordered flex items-center gap-2">
+                Full Name
+                <input type="text" name="full_name" class="grow" required>
+            </label>
+        </div>
+        <div class="mb-4">
+            <label class="input input-bordered flex items-center gap-2">
+                Email
+                <input type="email" name="email" class="grow" required>
+            </label>
+        </div>
+        <div class="mb-4">
+            <label class="input input-bordered flex items-center gap-2">
+                Phone
+                <input type="text" name="phone" class="grow" required>
+            </label>
+        </div>
+        <div class="mb-4">
+            <label class="input input-bordered flex items-center gap-2">
+                Username
+                <input type="text" name="username" class="grow" required>
+            </label>
+        </div>
+        <div class="mb-4">
+            <label class="input input-bordered flex items-center gap-2">
+                Password
+                <input type="password" name="password" class="grow" required>
+            </label>
+        </div>
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Role</label>
+            <div class="flex items-center gap-4">
+                <label class="flex items-center gap-2">
+                    <input type="radio" name="role" value="admin" class="radio" required>
+                    Admin
+                </label>
+                <label class="flex items-center gap-2">
+                    <input type="radio" name="role" value="user" class="radio" required>
+                    User
+                </label>
+            </div>
+        </div>
+        <div class="flex items-center justify-between">
+            <button type="submit" class="btn btn-primary rounded-full">
+                <i class="fas fa-user-plus mr-2"></i>
+                Add User
+            </button>
+        </div>
+    </form>
+</div>
 {% endblock %}

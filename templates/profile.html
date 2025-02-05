@@ -3,46 +3,53 @@
 {% block title %}Profile{% endblock %}
 
 {% block content %}
-<h2>Edit Profile</h2>
+<div class="daisyui theme-acid">
+    <h1 class="text-2xl font-bold mb-4">Edit Profile</h1>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        {% for category, message in messages %}
-            <div class="alert alert-{{ category }}">
-                {{ message }}
-            </div>
-        {% endfor %}
-    {% endif %}
-{% endwith %}
+    <form method="POST" onsubmit="return validatePassword()">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        
+        <div class="mb-4">
+            <label class="input input-bordered flex items-center gap-2">
+                Full Name
+                <input type="text" name="full_name" value="{{ user['full_name'] }}" class="grow" required>
+            </label>
+        </div>
 
-<form method="POST" onsubmit="return validatePassword()">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    
-    <div class="mb-3">
-        <label class="form-label">Full Name</label>
-        <input type="text" name="full_name" value="{{ user['full_name'] }}" class="form-control" required>
-    </div>
+        <div class="mb-4">
+            <label class="input input-bordered flex items-center gap-2">
+                Email
+                <input type="email" name="email" value="{{ user['email'] }}" class="grow" required>
+            </label>
+        </div>
 
-    <div class="mb-3">
-        <label class="form-label">Email</label>
-        <input type="email" name="email" value="{{ user['email'] }}" class="form-control" required>
-    </div>
+        <div class="mb-4">
+            <label class="input input-bordered flex items-center gap-2">
+                Phone
+                <input type="text" name="phone" value="{{ user['phone'] }}" class="grow" required>
+            </label>
+        </div>
 
-    <div class="mb-3">
-        <label class="form-label">Phone</label>
-        <input type="text" name="phone" value="{{ user['phone'] }}" class="form-control" required>
-    </div>
+        <div class="mb-4">
+            <label class="input input-bordered flex items-center gap-2">
+                New Password (leave blank to keep current password)
+                <input type="password" name="password" id="password" class="grow" placeholder="Leave blank to keep current password">
+            </label>
+        </div>
 
-    <div class="mb-3">
-        <label class="form-label">New Password (leave blank to keep current password)</label>
-        <input type="password" name="password" id="password" class="form-control" placeholder="Leave blank to keep current password">
-    </div>
+        <div class="mb-4">
+            <label class="input input-bordered flex items-center gap-2">
+                Confirm New Password
+                <input type="password" name="password_confirm" id="password_confirm" class="grow" placeholder="Confirm new password">
+            </label>
+        </div>
 
-    <div class="mb-3">
-        <label class="form-label">Confirm New Password</label>
-        <input type="password" name="password_confirm" id="password_confirm" class="form-control" placeholder="Confirm new password">
-    </div>
-
-    <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Update Profile</button>
-</form>
+        <div class="flex items-center justify-between">
+            <button type="submit" class="btn btn-secondary rounded-full">
+                <i class="fas fa-check mr-2"></i>
+                Update Profile
+            </button>
+        </div>
+    </form>
+</div>
 {% endblock %}

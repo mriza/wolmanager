@@ -3,39 +3,50 @@
 {% block title %}Users{% endblock %}
 
 {% block content %}
-<h1>Users</h1>
+<div class="daisyui theme-acid">
+    <h1 class="text-2xl font-bold mb-4">Users</h1>
 
-<!-- Add User Button -->
-<a href="{{ url_for('add_user') }}" class="btn btn-primary"><i class="bi bi-person-plus"></i> Add User</a>
+    <!-- Add User Button -->
+    <a href="{{ url_for('add_user') }}" class="btn btn-primary rounded-full">
+        <i class="fas fa-user-plus mr-2"></i>
+        Add User
+    </a>
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Full Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Username</th>
-            <th>Role</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for user in users %}
-        <tr>
-            <td>{{ user['full_name'] }}</td>
-            <td>{{ user['email'] }}</td>
-            <td>{{ user['phone'] }}</td>
-            <td>{{ user['username'] }}</td>
-            <td>{{ user['role'] }}</td>
-            <td>
-                <a href="{{ url_for('edit_user', user_id=user['id']) }}" class="btn btn-warning"><i class="bi bi-pencil-square"></i> Edit</a>
-                <form action="{{ url_for('delete_user', user_id=user['id']) }}" method="POST" style="display:inline;">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">  <!-- 🔹 Add CSRF token -->
-                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure?')"><i class="bi bi-person-x"></i> Delete</button>
-                </form>
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    <table class="min-w-full bg-white shadow-md rounded my-6">
+        <thead>
+            <tr>
+                <th class="py-2 px-4 bg-gray-200">Full Name</th>
+                <th class="py-2 px-4 bg-gray-200">Email</th>
+                <th class="py-2 px-4 bg-gray-200">Phone</th>
+                <th class="py-2 px-4 bg-gray-200">Username</th>
+                <th class="py-2 px-4 bg-gray-200">Role</th>
+                <th class="py-2 px-4 bg-gray-200">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td class="border px-4 py-2">{{ user['full_name'] }}</td>
+                <td class="border px-4 py-2">{{ user['email'] }}</td>
+                <td class="border px-4 py-2">{{ user['phone'] }}</td>
+                <td class="border px-4 py-2">{{ user['username'] }}</td>
+                <td class="border px-4 py-2">{{ user['role'] }}</td>
+                <td class="border px-4 py-2">
+                    <a href="{{ url_for('edit_user', user_id=user['id']) }}" class="btn btn-warning rounded-full">
+                        <i class="fas fa-edit mr-2"></i>
+                        Edit
+                    </a>
+                    <form action="{{ url_for('delete_user', user_id=user['id']) }}" method="POST" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-error rounded-full" onclick="return confirm('Are you sure?')">
+                            <i class="fas fa-trash mr-2"></i>
+                            Delete
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 {% endblock %}

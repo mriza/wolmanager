@@ -1,24 +1,41 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-    <div class="container-fluid">
-        <img src="{{ url_for('static', filename='images/icon.png') }}" alt="WOLManager" class="img-fluid" style="width: 30px; height: 30px;">
-        <a class="navbar-brand ms-2" href="{{ url_for('dashboard') }}">WoL Manager</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav me-auto">
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('dashboard') }}">Home</a></li>
-                {% if session['role'] == 'admin' %}
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('users') }}">Users</a></li>
-                {% endif %}
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('devices') }}">Devices</a></li>
-            </ul>
-            <div class="d-flex">
-                <a href="{{ url_for('profile') }}" class="btn btn-light me-2">
-                    <i class="bi bi-person"></i> {{ session['user_full_name'] }}
-                </a>
-                <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+<nav class="navbar bg-blue-800">
+    <div class="navbar-start">
+        <div class="dropdown">
+            <div tabindex="0" role="button" class="btn btn-ghost lg:hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" />
+                </svg>
             </div>
+            <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
+                <li><a href="{{ url_for('dashboard') }}">Home</a></li>
+                {% if session['role'] == 'admin' %}
+                <li><a href="{{ url_for('users') }}">Users</a></li>
+                {% endif %}
+                <li><a href="{{ url_for('devices') }}">Devices</a></li>
+            </ul>
         </div>
+        <a class="btn btn-ghost text-xl flex items-center text-base-100" href="{{ url_for('dashboard') }}">
+            <img src="{{ url_for('static', filename='images/icon.png') }}" alt="WOLManager" class="h-8 w-8 mr-2">
+            WoL Manager
+        </a>
+    </div>
+    <div class="navbar-center hidden lg:flex">
+        <ul class="menu menu-horizontal px-1 text-base-100">
+            <li><a href="{{ url_for('dashboard') }}">Home</a></li>
+            {% if session['role'] == 'admin' %}
+            <li><a href="{{ url_for('users') }}">Users</a></li>
+            {% endif %}
+            <li><a href="{{ url_for('devices') }}">Devices</a></li>
+        </ul>
+    </div>
+    <div class="navbar-end">
+        <a href="{{ url_for('profile') }}" class="btn btn-accent rounded-full">
+            <i class="fas fa-user mr-2"></i>
+            {{ session['user_full_name'] }}
+        </a>
+        <a href="{{ url_for('logout') }}" class="btn btn-accent rounded-full ml-4">
+            <i class="fas fa-sign-out-alt mr-2"></i>
+            Logout
+        </a>
     </div>
 </nav>

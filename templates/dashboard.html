@@ -3,17 +3,54 @@
 {% block title %}Dashboard{% endblock %}
 
 {% block content %}
-<div id="dashboard-container" 
-     data-users="{{ users_count }}" 
-     data-devices="{{ devices_count }}"
-     data-success="{{ success_count }}"
-     data-failed="{{ failed_count }}"
-     data-events="{{ events|tojson|safe }}">
-    <div id="kpi-users" class="dashboard-cell"></div>
-    <div id="kpi-devices" class="dashboard-cell"></div>
-    <div id="success-chart" class="dashboard-cell"></div>
-    <div id="failed-chart" class="dashboard-cell"></div>
-    <div id="events-grid"></div>
-    <div id="events-table" class="dashboard-cell"></div>
+<div class="container mx-auto mt-8">
+    <div class="stats shadow">
+        {% if session['role'] == 'admin' %}
+        <div class="stat">
+            <div class="stat-figure text-secondary">
+                <i class="fas fa-users fa-2x"></i>
+            </div>
+            <div class="stat-title">Users</div>
+            <div class="stat-value">{{ num_users }}</div>
+            <div class="stat-desc">Total registered users</div>
+        </div>
+        {% endif %}
+        <div class="stat">
+            <div class="stat-figure text-secondary">
+                <i class="fas fa-desktop fa-2x"></i>
+            </div>
+            <div class="stat-title">Devices</div>
+            <div class="stat-value">{{ num_devices }}</div>
+            <div class="stat-desc">Total connected devices</div>
+        </div>
+    </div>
+</div>
+<div class="container mx-auto mt-8">
+    <div class="stats shadow">
+        <div class="stat">
+            <div class="stat-figure text-secondary">
+                <i class="fas fa-calendar-day fa-2x"></i>
+            </div>
+            <div class="stat-title">WOL Events Today</div>
+            <div class="stat-value">{{ wol_events_today }}</div>
+            <div class="stat-desc">Wake-on-LAN events today</div>
+        </div>
+        <div class="stat">
+            <div class="stat-figure text-secondary">
+                <i class="fas fa-calendar-alt fa-2x"></i>
+            </div>
+            <div class="stat-title">WOL Events This Month</div>
+            <div class="stat-value">{{ wol_events_month }}</div>
+            <div class="stat-desc">Wake-on-LAN events this month</div>
+        </div>
+        <div class="stat">
+            <div class="stat-figure text-secondary">
+                <i class="fas fa-calendar fa-2x"></i>
+            </div>
+            <div class="stat-title">WOL Events This Year</div>
+            <div class="stat-value">{{ wol_events_year }}</div>
+            <div class="stat-desc">Wake-on-LAN events this year</div>
+        </div>
+    </div>
 </div>
 {% endblock %}

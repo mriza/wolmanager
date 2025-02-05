@@ -3,27 +3,30 @@
 {% block title %}Login{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-body">
-                <div class="text-center">
-                    <img src="{{ url_for('static', filename='images/icon.png') }}" alt="App Icon" width="50" height="50">
-                </div>
-                <h3 class="text-center">Login</h3>
-                <form method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <div class="mb-3">
-                        <label class="form-label">Username</label>
-                        <input type="text" name="username" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Password</label>
-                        <input type="password" name="password" class="form-control" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100"><i class="bi bi-box-arrow-in-right"></i> Login</button>
-                </form>
+<div class="flex justify-center items-center h-screen">
+    <div class="w-full max-w-md">
+        <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+            <div class="text-center mb-4">
+                <img src="{{ url_for('static', filename='images/icon.png') }}" alt="App Icon" class="h-12 w-12 mx-auto">
             </div>
+            <h3 class="text-center text-2xl font-bold mb-4">Login</h3>
+            <form method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Username</label>
+                    <input type="text" name="username" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">Password</label>
+                    <input type="password" name="password" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                </div>
+                <div class="flex items-center justify-between">
+                    <button type="submit" class="btn rounded-full w-full">
+                        <i class="fas fa-sign-in-alt mr-2"></i>
+                        Login
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

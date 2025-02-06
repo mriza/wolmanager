@@ -1,0 +1,22 @@
+<!-- ...existing code... -->
+<div class="container mx-auto mt-4">
+    <h1 class="text-2xl font-bold mb-4">Add Schedule</h1>
+    <form action="{{ url_for('add_schedule') }}" method="post">
+        <div class="mb-4">
+            <label for="device_id" class="block text-sm font-medium text-gray-700">Device</label>
+            <select id="device_id" name="device_id" class="mt-1 block w-full">
+                {% for device in devices %}
+                <option value="{{ device.id }}">{{ device.device_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="mb-4">
+            <label for="start_time" class="block text-sm font-medium text-gray-700">Start Time</label>
+            <input type="datetime-local" id="start_time" name="start_time" class="mt-1 block w-full">
+        </div>
+        <div class="flex justify-end">
+            <button type="submit" class="btn btn-primary">Add Schedule</button>
+        </div>
+    </form>
+</div>
+<!-- ...existing code... -->

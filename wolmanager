@@ -10,11 +10,15 @@ import datetime
 from io import BytesIO
 import base64
 import json
+from apscheduler.schedulers.background import BackgroundScheduler
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'fallback_secret_key')
 
 csrf = CSRFProtect(app)
+
+scheduler = BackgroundScheduler()
+scheduler.start()
 
 def get_db_connection():
     conn = sqlite3.connect('database.db')
@@ -88,6 +92,14 @@ def get_wol_event_count(period):
 
     with get_db_connection() as conn:
         return conn.execute(query, (start_time,)).fetchone()[0]
+
+def schedule_wol(device_id, start_time):
+    with get_db_connection() as conn:
+        device = conn.execute("SELECT mac_address FROM devices WHERE id = ?", (device_id,)).fetchone()
+        if not device:
+            raise ValueError("Device not found")
+        mac_address = device['mac_address']
+    scheduler.add_job(send_wol, 'date', run_date=start_time, args=[mac_address])
 
 @app.route('/')
 def index():
@@ -383,6 +395,71 @@ def wol():
     except ValueError as e:
         flash(str(e), 'danger')
     return redirect(url_for('dashboard'))
+
+@app.route('/schedule')
+def schedule():
+    if not is_user_logged_in():
+        return redirect(url_for('login'))
+    with get_db_connection() as conn:
+        schedules = conn.execute("""
+            SELECT s.id, s.device_id, s.start_time, d.device_name
+            FROM schedules s
+            JOIN devices d ON s.device_id = d.id
+            WHERE s.user_id = ?
+        """, (session['user_id'],)).fetchall()
+    return render_template('schedule.html', schedules=schedules)
+
+@app.route('/schedule/add', methods=['GET', 'POST'])
+def add_schedule():
+    if not is_user_logged_in():
+        return redirect(url_for('login'))
+    if request.method == 'POST':
+        device_id = request.form['device_id']
+        start_time = request.form['start_time']
+        with get_db_connection() as conn:
+            conn.execute(
+                "INSERT INTO schedules (device_id, start_time, user_id) VALUES (?, ?, ?)",
+                (device_id, start_time, session['user_id'])
+            )
+            conn.commit()
+        flash('Schedule added successfully!', 'success')
+        return redirect(url_for('schedule'))
+    with get_db_connection() as conn:
+        devices = conn.execute("SELECT * FROM devices WHERE user_id = ?", (session['user_id'],)).fetchall()
+    return render_template('add_schedule.html', devices=devices)
+
+@app.route('/schedule/edit/<int:schedule_id>', methods=['GET', 'POST'])
+def edit_schedule(schedule_id):
+    if not is_user_logged_in():
+        return redirect(url_for('login'))
+    with get_db_connection() as conn:
+        schedule = conn.execute("SELECT * FROM schedules WHERE id = ?", (schedule_id,)).fetchone()
+        if not schedule:
+            flash('Schedule not found!', 'danger')
+            return redirect(url_for('schedule'))
+        if request.method == 'POST':
+            device_id = request.form['device_id']
+            start_time = request.form['start_time']
+            conn.execute(
+                "UPDATE schedules SET device_id = ?, start_time = ? WHERE id = ?",
+                (device_id, start_time, schedule_id)
+            )
+            conn.commit()
+            flash('Schedule updated successfully!', 'success')
+            return redirect(url_for('schedule'))
+    with get_db_connection() as conn:
+        devices = conn.execute("SELECT * FROM devices WHERE user_id = ?", (session['user_id'],)).fetchall()
+    return render_template('edit_schedule.html', schedule=schedule, devices=devices)
+
+@app.route('/schedule/delete/<int:schedule_id>', methods=['POST'])
+def delete_schedule(schedule_id):
+    if not is_user_logged_in():
+        return redirect(url_for('login'))
+    with get_db_connection() as conn:
+        conn.execute("DELETE FROM schedules WHERE id = ?", (schedule_id,))
+        conn.commit()
+    flash('Schedule deleted successfully!', 'success')
+    return redirect(url_for('schedule'))
 
 @app.route('/logout')
 def logout():

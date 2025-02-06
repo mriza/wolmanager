@@ -3,15 +3,11 @@
 {% block title %}Users{% endblock %}
 
 {% block content %}
-<div class="daisyui theme-acid">
-    <h1 class="text-2xl font-bold mb-4">Users</h1>
-
-    <!-- Add User Button -->
-    <a href="{{ url_for('add_user') }}" class="btn btn-primary rounded-full">
-        <i class="fas fa-user-plus mr-2"></i>
-        Add User
-    </a>
-
+<div class="container mx-auto mt-4">
+    <div class="flex justify-between items-center mb-4">
+        <h1 class="text-2xl font-bold">Devices</h1>
+        <a href="{{ url_for('add_user') }}" class="btn btn-primary rounded-full"><i class="fas fa-user-plus mr-2"></i>Add User</a>
+    </div>
     <table class="min-w-full bg-white shadow-md rounded my-6">
         <thead>
             <tr>

@@ -3,52 +3,54 @@
 {% block title %}Edit User{% endblock %}
 
 {% block content %}
-<h1 class="text-2xl font-bold mb-4">Edit User</h1>
+<div class="daisyui theme-acid">
+    <h1 class="text-2xl font-bold mb-4">Edit User</h1>
 
-<form action="{{ url_for('edit_user', user_id=user['id']) }}" method="POST">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <div class="mb-4">
-        <label class="input input-bordered flex items-center gap-2">
-            Full Name
-            <input type="text" name="full_name" class="grow" value="{{ user['full_name'] }}" required>
-        </label>
-    </div>
-    <div class="mb-4">
-        <label class="input input-bordered flex items-center gap-2">
-            Email
-            <input type="email" name="email" class="grow" value="{{ user['email'] }}" required>
-        </label>
-    </div>
-    <div class="mb-4">
-        <label class="input input-bordered flex items-center gap-2">
-            Phone
-            <input type="text" name="phone" class="grow" value="{{ user['phone'] }}" required>
-        </label>
-    </div>
-    <div class="mb-4">
-        <label class="input input-bordered flex items-center gap-2">
-            New Password (leave blank to keep current password)
-            <input type="password" name="password" class="grow" placeholder="Leave blank to keep current password">
-        </label>
-    </div>
-    <div class="mb-4">
-        <label class="block text-gray-700 text-sm font-bold mb-2">Role</label>
-        <div class="flex items-center gap-4">
-            <label class="flex items-center gap-2">
-                <input type="radio" name="role" value="admin" class="radio" {% if user['role'] == 'admin' %}checked{% endif %}>
-                Admin
-            </label>
-            <label class="flex items-center gap-2">
-                <input type="radio" name="role" value="user" class="radio" {% if user['role'] == 'user' %}checked{% endif %}>
-                User
+    <form action="{{ url_for('edit_user', user_id=user['id']) }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="mb-4">
+            <label class="input input-bordered flex items-center gap-2">
+                <i class="fas fa-user h-4 w-4 opacity-70"></i>
+                <input type="text" name="full_name" class="grow" value="{{ user['full_name'] }}" required>
             </label>
         </div>
-    </div>
-    <div class="flex items-center justify-between">
-        <button type="submit" class="btn btn-secondary">
-            <i class="fas fa-floppy-disk mr-2"></i>
-            Update User
-        </button>
-    </div>
-</form>
+        <div class="mb-4">
+            <label class="input input-bordered flex items-center gap-2">
+                <i class="fas fa-envelope h-4 w-4 opacity-70"></i>
+                <input type="email" name="email" class="grow" value="{{ user['email'] }}" required>
+            </label>
+        </div>
+        <div class="mb-4">
+            <label class="input input-bordered flex items-center gap-2">
+                <i class="fas fa-phone h-4 w-4 opacity-70"></i>
+                <input type="text" name="phone" class="grow" value="{{ user['phone'] }}" required>
+            </label>
+        </div>
+        <div class="mb-4">
+            <label class="input input-bordered flex items-center gap-2">
+                <i class="fas fa-lock h-4 w-4 opacity-70"></i>
+                <input type="password" name="password" class="grow" placeholder="Leave blank to keep current password">
+            </label>
+        </div>
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Role</label>
+            <div class="flex items-center gap-4">
+                <label class="flex items-center gap-2">
+                    <input type="radio" name="role" value="admin" class="radio" {% if user['role'] == 'admin' %}checked{% endif %}>
+                    Admin
+                </label>
+                <label class="flex items-center gap-2">
+                    <input type="radio" name="role" value="user" class="radio" {% if user['role'] == 'user' %}checked{% endif %}>
+                    User
+                </label>
+            </div>
+        </div>
+        <div class="flex items-center justify-between">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-floppy-disk mr-2"></i>
+                Update User
+            </button>
+        </div>
+    </form>
+</div>
 {% endblock %}

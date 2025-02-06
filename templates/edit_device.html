@@ -3,33 +3,34 @@
 {% block title %}Edit Device{% endblock %}
 
 {% block content %}
-<h1 class="text-2xl font-bold mb-4">Edit Device</h1>
+<div class="daisyui theme-acid">
+    <h1 class="text-2xl font-bold mb-4">Edit Device</h1>
 
-<form method="POST">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <div class="mb-4">
-        <label class="input input-bordered flex items-center gap-2">
-            <input type="text" id="name" name="name" value="{{ device.device_name }}" class="grow" required>
-            <i class="fas fa-tag h-4 w-4 opacity-70"></i>
-        </label>
-    </div>
-    <div class="mb-4">
-        <label class="input input-bordered flex items-center gap-2">
-            <input type="text" id="ip_address" name="ip_address" value="{{ device.ip_address }}" class="grow" oninput="formatIPAddress(this)" maxlength="15">
-            <i class="fas fa-network-wired h-4 w-4 opacity-70"></i>
-        </label>
-    </div>
-    <div class="mb-4">
-        <label class="input input-bordered flex items-center gap-2">
-            <input type="text" id="mac_address" name="mac_address" value="{{ device.mac_address }}" class="grow" required maxlength="17">
-            <i class="fas fa-microchip h-4 w-4 opacity-70"></i>
-        </label>
-    </div>
-    <div class="flex items-center justify-between">
-        <button type="submit" class="btn btn-secondary rounded-full">
-            <i class="fas fa-floppy-disk mr-2"></i> Update Device
-        </button>
-    </div>
-</form>
-
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="mb-4">
+            <label class="input input-bordered flex items-center gap-2">
+                <i class="fas fa-tag h-4 w-4 opacity-70"></i>
+                <input type="text" id="name" name="name" value="{{ device.device_name }}" class="grow" required>
+            </label>
+        </div>
+        <div class="mb-4">
+            <label class="input input-bordered flex items-center gap-2">
+                <i class="fas fa-network-wired h-4 w-4 opacity-70"></i>
+                <input type="text" id="ip_address" name="ip_address" value="{{ device.ip_address }}" class="grow" oninput="formatIPAddress(this)" maxlength="15">
+            </label>
+        </div>
+        <div class="mb-4">
+            <label class="input input-bordered flex items-center gap-2">
+                <i class="fas fa-microchip h-4 w-4 opacity-70"></i>
+                <input type="text" id="mac_address" name="mac_address" value="{{ device.mac_address }}" class="grow" required maxlength="17">
+            </label>
+        </div>
+        <div class="flex items-center justify-between">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-floppy-disk mr-2"></i> Update Device
+            </button>
+        </div>
+    </form>
+</div>
 {% endblock %}

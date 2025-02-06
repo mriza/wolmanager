@@ -11,41 +11,41 @@
         
         <div class="mb-4">
             <label class="input input-bordered flex items-center gap-2">
-                Full Name
+                <i class="fas fa-user h-4 w-4 opacity-70"></i>
                 <input type="text" name="full_name" value="{{ user['full_name'] }}" class="grow" required>
             </label>
         </div>
 
         <div class="mb-4">
             <label class="input input-bordered flex items-center gap-2">
-                Email
+                <i class="fas fa-envelope h-4 w-4 opacity-70"></i>
                 <input type="email" name="email" value="{{ user['email'] }}" class="grow" required>
             </label>
         </div>
 
         <div class="mb-4">
             <label class="input input-bordered flex items-center gap-2">
-                Phone
+                <i class="fas fa-phone h-4 w-4 opacity-70"></i>
                 <input type="text" name="phone" value="{{ user['phone'] }}" class="grow" required>
             </label>
         </div>
 
         <div class="mb-4">
             <label class="input input-bordered flex items-center gap-2">
-                New Password (leave blank to keep current password)
+                <i class="fas fa-lock h-4 w-4 opacity-70"></i>
                 <input type="password" name="password" id="password" class="grow" placeholder="Leave blank to keep current password">
             </label>
         </div>
 
         <div class="mb-4">
             <label class="input input-bordered flex items-center gap-2">
-                Confirm New Password
+                <i class="fas fa-lock h-4 w-4 opacity-70"></i>
                 <input type="password" name="password_confirm" id="password_confirm" class="grow" placeholder="Confirm new password">
             </label>
         </div>
 
         <div class="flex items-center justify-between">
-            <button type="submit" class="btn btn-secondary">
+            <button type="submit" class="btn btn-primary">
                 <i class="fas fa-check mr-2"></i>
                 Update Profile
             </button>

@@ -8,32 +8,32 @@
         <h1 class="text-2xl font-bold">Devices</h1>
         <a href="{{ url_for('add_device') }}" class="btn btn-primary rounded-full"><i class="fas fa-laptop-medical mr-2"></i>Add Device</a>
     </div>
-    <table class="min-w-full bg-white shadow-md rounded my-6">
+    <table class="table table-zebra">
         <thead>
             <tr>
                 {% if session['role'] == 'admin' %}
-                <th class="py-2 px-4 bg-gray-200">User</th>
+                <th>User</th>
                 {% else %}
-                <th class="py-2 px-4 bg-gray-200">ID</th>
+                <th>ID</th>
                 {% endif %}
-                <th class="py-2 px-4 bg-gray-200">Name</th>
-                <th class="py-2 px-4 bg-gray-200">IP Address</th>
-                <th class="py-2 px-4 bg-gray-200">MAC Address</th>
-                <th class="py-2 px-4 bg-gray-200">Actions</th>
+                <th>Name</th>
+                <th>IP Address</th>
+                <th>MAC Address</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             {% for device in devices %}
             <tr>
                 {% if session['role'] == 'admin' %}
-                <td class="border px-4 py-2">{{ device.owner_username }}</td>
+                <td>{{ device.owner_username }}</td>
                 {% else %}
-                <td class="border px-4 py-2">{{ device.id }}</td>
+                <td>{{ device.id }}</td>
                 {% endif %}
-                <td class="border px-4 py-2">{{ device.device_name }}</td>
-                <td class="border px-4 py-2">{{ device.ip_address }}</td>
-                <td class="border px-4 py-2">{{ device.mac_address }}</td>
-                <td class="border px-4 py-2">
+                <td>{{ device.device_name }}</td>
+                <td>{{ device.ip_address }}</td>
+                <td>{{ device.mac_address }}</td>
+                <td>
                     <form action="{{ url_for('start_device', device_id=device.id) }}" method="post" style="display:inline;">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-success rounded-full">

@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
             e.target.value = formattedValue;
         });
     }
+    // ...existing code...
 });
 
 function formatIPAddress(input) {

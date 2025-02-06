@@ -9,26 +9,26 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="mb-4">
             <label class="input input-bordered flex items-center gap-2">
-                Name
-                <input type="text" id="name" name="name" class="grow" required>
+                <i class="fas fa-tag h-4 w-4 opacity-70"></i>
+                <input type="text" id="name" name="name" class="grow" placeholder="Name" required>
             </label>
         </div>
         <div class="mb-4">
             <label class="input input-bordered flex items-center gap-2">
-                IP Address
-                <input type="text" id="ip_address" name="ip_address" class="grow" oninput="formatIPAddress(this)" maxlength="15">
+                <i class="fas fa-network-wired h-4 w-4 opacity-70"></i>
+                <input type="text" id="ip_address" name="ip_address" class="grow" placeholder="IP Address" oninput="formatIPAddress(this)" maxlength="15">
             </label>
         </div>
         <div class="mb-4">
             <label class="input input-bordered flex items-center gap-2">
-                MAC Address
-                <input type="text" id="mac_address" name="mac_address" class="grow" required maxlength="17">
+                <i class="fas fa-microchip h-4 w-4 opacity-70"></i>
+                <input type="text" id="mac_address" name="mac_address" class="grow" placeholder="MAC Address" required maxlength="17">
             </label>
         </div>
         {% if session['role'] == 'admin' %}
         <div class="mb-4">
             <label class="block text-gray-700 text-sm font-bold mb-2" for="user_id">User:</label>
-            <select id="user_id" name="user_id" class="select select-bordered w-full">
+            <select id="user_id" name="user_id" class="select select-bordered w-full max-w-xs">
                 {% for user in users %}
                 <option value="{{ user.id }}">{{ user.username }}</option>
                 {% endfor %}
@@ -36,7 +36,7 @@
         </div>
         {% endif %}
         <div class="flex items-center justify-between">
-            <button type="submit" class="btn btn-primary rounded-full">
+            <button type="submit" class="btn btn-primary">
                 <i class="fas fa-laptop-medical mr-2"></i>
                 Add Device
             </button>

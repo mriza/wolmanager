@@ -10,32 +10,32 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="mb-4">
             <label class="input input-bordered flex items-center gap-2">
-                Full Name
-                <input type="text" name="full_name" class="grow" required>
+                <i class="fas fa-user h-4 w-4 opacity-70"></i>
+                <input type="text" name="full_name" class="grow" placeholder="Full Name" required>
             </label>
         </div>
         <div class="mb-4">
             <label class="input input-bordered flex items-center gap-2">
-                Email
-                <input type="email" name="email" class="grow" required>
+                <i class="fas fa-envelope h-4 w-4 opacity-70"></i>
+                <input type="email" name="email" class="grow" placeholder="Email" required>
             </label>
         </div>
         <div class="mb-4">
             <label class="input input-bordered flex items-center gap-2">
-                Phone
-                <input type="text" name="phone" class="grow" required>
+                <i class="fas fa-phone h-4 w-4 opacity-70"></i>
+                <input type="text" name="phone" class="grow" placeholder="Phone" required>
             </label>
         </div>
         <div class="mb-4">
             <label class="input input-bordered flex items-center gap-2">
-                Username
-                <input type="text" name="username" class="grow" required>
+                <i class="fas fa-user-circle h-4 w-4 opacity-70"></i>
+                <input type="text" name="username" class="grow" placeholder="Username" required>
             </label>
         </div>
         <div class="mb-4">
             <label class="input input-bordered flex items-center gap-2">
-                Password
-                <input type="password" name="password" class="grow" required>
+                <i class="fas fa-lock h-4 w-4 opacity-70"></i>
+                <input type="password" name="password" class="grow" placeholder="Password" required>
             </label>
         </div>
         <div class="mb-4">
@@ -52,7 +52,7 @@
             </div>
         </div>
         <div class="flex items-center justify-between">
-            <button type="submit" class="btn btn-primary rounded-full">
+            <button type="submit" class="btn btn-primary">
                 <i class="fas fa-user-plus mr-2"></i>
                 Add User
             </button>

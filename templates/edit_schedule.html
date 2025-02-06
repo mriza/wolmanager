@@ -4,15 +4,17 @@
     <form action="{{ url_for('edit_schedule', schedule_id=schedule.id) }}" method="post">
         <div class="mb-4">
             <label for="device_id" class="block text-sm font-medium text-gray-700">Device</label>
-            <select id="device_id" name="device_id" class="mt-1 block w-full">
+            <select id="device_id" name="device_id" class="select select-bordered w-full max-w-xs">
                 {% for device in devices %}
                 <option value="{{ device.id }}" {% if device.id == schedule.device_id %}selected{% endif %}>{{ device.device_name }}</option>
                 {% endfor %}
             </select>
         </div>
         <div class="mb-4">
-            <label for="start_time" class="block text-sm font-medium text-gray-700">Start Time</label>
-            <input type="datetime-local" id="start_time" name="start_time" value="{{ schedule.start_time }}" class="mt-1 block w-full">
+            <label class="input input-bordered flex items-center gap-2">
+                <input type="datetime-local" id="start_time" name="start_time" value="{{ schedule.start_time }}" class="grow">
+                <i class="fas fa-clock h-4 w-4 opacity-70"></i>
+            </label>
         </div>
         <div class="flex justify-end">
             <button type="submit" class="btn btn-primary">Update Schedule</button>

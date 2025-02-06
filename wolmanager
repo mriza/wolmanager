@@ -11,6 +11,7 @@ from io import BytesIO
 import base64
 import json
 from apscheduler.schedulers.background import BackgroundScheduler
+from dateutil import parser  # Add this import
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'fallback_secret_key')
@@ -93,13 +94,23 @@ def get_wol_event_count(period):
     with get_db_connection() as conn:
         return conn.execute(query, (start_time,)).fetchone()[0]
 
-def schedule_wol(device_id, start_time):
+def schedule_wol(device_id, schedule_type, start_time, repeat_count=None):
     with get_db_connection() as conn:
         device = conn.execute("SELECT mac_address FROM devices WHERE id = ?", (device_id,)).fetchone()
         if not device:
             raise ValueError("Device not found")
         mac_address = device['mac_address']
-    scheduler.add_job(send_wol, 'date', run_date=start_time, args=[mac_address])
+    
+    if schedule_type == 'once':
+        scheduler.add_job(send_wol, 'date', run_date=start_time, args=[mac_address])
+    elif schedule_type == 'daily':
+        scheduler.add_job(send_wol, 'interval', days=1, start_date=start_time, args=[mac_address], id=f"{device_id}_daily", replace_existing=True, max_instances=repeat_count)
+    elif schedule_type == 'weekly':
+        scheduler.add_job(send_wol, 'interval', weeks=1, start_date=start_time, args=[mac_address], id=f"{device_id}_weekly", replace_existing=True, max_instances=repeat_count)
+    elif schedule_type == 'monthly':
+        scheduler.add_job(send_wol, 'cron', day=start_time.day, hour=start_time.hour, minute=start_time.minute, args=[mac_address], id=f"{device_id}_monthly", replace_existing=True, max_instances=repeat_count)
+    else:
+        raise ValueError("Invalid schedule type specified")
 
 @app.route('/')
 def index():
@@ -415,11 +426,21 @@ def add_schedule():
         return redirect(url_for('login'))
     if request.method == 'POST':
         device_id = request.form['device_id']
-        start_time = request.form['start_time']
+        schedule_type = request.form['schedule_type']
+        start_time_str = request.form['start_time']
+        try:
+            start_time = parser.parse(start_time_str)  # Parse the start_time string
+        except ValueError:
+            flash('Invalid date format', 'danger')
+            return redirect(url_for('add_schedule'))
+        repeat_count = request.form.get('repeat_count', None)
+        if repeat_count:
+            repeat_count = int(repeat_count)
+        schedule_wol(device_id, schedule_type, start_time, repeat_count)
         with get_db_connection() as conn:
             conn.execute(
-                "INSERT INTO schedules (device_id, start_time, user_id) VALUES (?, ?, ?)",
-                (device_id, start_time, session['user_id'])
+                "INSERT INTO schedules (device_id, schedule_type, start_time, repeat_count, user_id) VALUES (?, ?, ?, ?, ?)",
+                (device_id, schedule_type, start_time, repeat_count, session['user_id'])
             )
             conn.commit()
         flash('Schedule added successfully!', 'success')
@@ -439,10 +460,10 @@ def edit_schedule(schedule_id):
             return redirect(url_for('schedule'))
         if request.method == 'POST':
             device_id = request.form['device_id']
-            start_time = request.form['start_time']
+            cron_expression = request.form['cron_expression']
             conn.execute(
-                "UPDATE schedules SET device_id = ?, start_time = ? WHERE id = ?",
-                (device_id, start_time, schedule_id)
+                "UPDATE schedules SET device_id = ?, cron_expression = ? WHERE id = ?",
+                (device_id, cron_expression, schedule_id)
             )
             conn.commit()
             flash('Schedule updated successfully!', 'success')

@@ -1,22 +1,71 @@
-<!-- ...existing code... -->
-<div class="container mx-auto mt-4">
+{% extends 'base.html' %}
+
+{% block title %}Add Schedule{% endblock %}
+
+{% block content %}
+<div class="daisyui theme-acid">
     <h1 class="text-2xl font-bold mb-4">Add Schedule</h1>
-    <form action="{{ url_for('add_schedule') }}" method="post">
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="mb-4">
-            <label for="device_id" class="block text-sm font-medium text-gray-700">Device</label>
-            <select id="device_id" name="device_id" class="mt-1 block w-full">
-                {% for device in devices %}
-                <option value="{{ device.id }}">{{ device.device_name }}</option>
-                {% endfor %}
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="device_id">Device</label>
+                <select id="device_id" name="device_id" class="select select-bordered w-full max-w-xs" required>
+                    {% for device in devices %}
+                    <option value="{{ device.id }}">{{ device.device_name }}</option>
+                    {% endfor %}
+                </select>
+            
+        </div>
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="schedule_type">Schedule type:</label>
+            <select id="schedule_type" name="schedule_type" class="select select-bordered w-full max-w-xs" required onchange="toggleScheduleOptions()">
+                <option value="once">One Time</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
             </select>
         </div>
-        <div class="mb-4">
-            <label for="start_time" class="block text-sm font-medium text-gray-700">Start Time</label>
-            <input type="datetime-local" id="start_time" name="start_time" class="mt-1 block w-full">
+        <div class="mb-4" id="start_time_container">
+            <label class="input input-bordered flex items-center gap-2">
+                <i class="fas fa-clock h-4 w-4 opacity-70"></i>
+                <input type="datetime-local" id="start_time" name="start_time" class="grow" required>
+            </label>
         </div>
-        <div class="flex justify-end">
-            <button type="submit" class="btn btn-primary">Add Schedule</button>
+        <div class="mb-4" id="repeat_count_container" style="display: none;">
+            <label class="input input-bordered flex items-center gap-2">
+                <i class="fas fa-sync-alt h-4 w-4 opacity-70"></i>
+                <input type="number" id="repeat_count" name="repeat_count" class="grow" placeholder="Leave blank for indefinite" min="1">
+            </label>
+        </div>
+        <div class="flex items-center justify-between">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-calendar-plus mr-2"></i>
+                Add Schedule
+            </button>
         </div>
     </form>
 </div>
-<!-- ...existing code... -->
+
+<script>
+function toggleScheduleOptions() {
+    const scheduleType = document.getElementById('schedule_type').value;
+    const startTimeContainer = document.getElementById('start_time_container');
+    const repeatCountContainer = document.getElementById('repeat_count_container');
+    
+    if (scheduleType === 'once') {
+        startTimeContainer.style.display = 'block';
+        repeatCountContainer.style.display = 'none';
+    } else {
+        startTimeContainer.style.display = 'block';
+        repeatCountContainer.style.display = 'block';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    const scheduleTypeSelect = document.getElementById('schedule_type');
+    if (scheduleTypeSelect) {
+        scheduleTypeSelect.addEventListener('change', toggleScheduleOptions);
+    }
+});
+</script>
+{% endblock %}
